@@ -19,12 +19,6 @@ stages:
     displayName: Build and Test
 
     steps:
-    - task: UseDotNet@2
-      displayName: 'Use .NET 9'
-      inputs:
-        version: 9.0.x
-        includePreviewVersions: false
-
     - task: NuGetToolInstaller@1
 
     - task: DotNetCoreCLI@2
