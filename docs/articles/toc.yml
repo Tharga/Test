@@ -1,0 +1,8 @@
+- name: Overview
+  href: index.md
+- name: Getting started
+  href: getting-started.md
+- name: Assignment checks
+  href: assignment-checks.md
+- name: Dependency tests
+  href: dependency-tests.md

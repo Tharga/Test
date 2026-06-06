@@ -1,0 +1,53 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "..",
+          "files": [
+            "Tharga.Test.Toolkit/Tharga.Test.Toolkit.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "includePrivateMembers": false,
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "noRestore": false,
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "EnumSortOrder": "alphabetic",
+      "allowCompilationErrors": false
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["**/*.{md,yml}"],
+        "exclude": ["_site/**", "obj/**"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["CNAME"]
+      }
+    ],
+    "output": "_site",
+    "globalMetadata": {
+      "_appName": "Tharga.Test.Toolkit",
+      "_appTitle": "Tharga.Test.Toolkit",
+      "_appLogoPath": "https://thargelion.net/assets/component-test.png",
+      "_appFaviconPath": "https://thargelion.net/assets/component-test.png",
+      "_enableSearch": true,
+      "_disableContribution": false,
+      "_gitContribute": {
+        "repo": "https://github.com/Tharga/Test",
+        "branch": "master"
+      }
+    },
+    "template": ["default", "modern", "templates/thg"],
+    "postProcessors": ["ExtractSearchIndex"],
+    "keepFileLink": false,
+    "disableGitFeatures": false
+  }
+}
