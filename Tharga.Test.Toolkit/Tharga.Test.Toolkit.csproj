@@ -7,7 +7,7 @@
 		<Company>Thargelion AB</Company>
 		<Product>Tharga Test Toolkit</Product>
 		<Description>Helper methods for unit testing.</Description>
-		<PackageIconUrl>http://thargelion.se/wp-content/uploads/2019/11/Thargelion-White-Icon-150.png</PackageIconUrl>
+		<PackageIconUrl>https://thargelion.net/assets/component-test.png</PackageIconUrl>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<PackageProjectUrl>https://github.com/Tharga/Toolkit</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
