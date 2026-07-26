@@ -11,7 +11,7 @@ namespace Tharga.Test.Toolkit
         public static IEnumerable<(string method, object data)> TestAssignments(this Type type, Func<Type, object> createSpecimen, string[] ignoreFunctions = null, BindingFlags bindingAttr = BindingFlags.Static | BindingFlags.Public)
         {
             var methods = type.GetMethods(bindingAttr).Where(x => ignoreFunctions == null || ignoreFunctions.All(y => x.Name != y));
-            foreach (var valueTuple in TestAssignments(methods, null, createSpecimen, ignoreFunctions))
+            foreach (var valueTuple in TestAssignments(methods, null, createSpecimen))
             {
                 yield return valueTuple;
             }
@@ -22,13 +22,15 @@ namespace Tharga.Test.Toolkit
             var standardTypes = new[] { "GetType", "Equals" };
             var tps = ignoreFunctions?.Union(standardTypes).ToArray() ?? standardTypes;
             var methods = converter.GetType().GetMethods(bindingAttr).Where(x => tps.All(y => x.Name != y));
-            foreach (var valueTuple in TestAssignments(methods, converter, createSpecimen, tps))
+            foreach (var valueTuple in TestAssignments(methods, converter, createSpecimen))
             {
                 yield return valueTuple;
             }
         }
 
-        private static IEnumerable<(string methods, object data)> TestAssignments(IEnumerable<MethodInfo> methods, object converter, Func<Type, object> createSpecimen, string[] tps)
+        // Callers filter `methods` by ignoreFunctions before calling in, so the
+        // filter list itself is not needed here.
+        private static IEnumerable<(string methods, object data)> TestAssignments(IEnumerable<MethodInfo> methods, object converter, Func<Type, object> createSpecimen)
         {
             foreach (var method in methods)
             {
@@ -146,27 +148,35 @@ namespace Tharga.Test.Toolkit
             if (s1 is IEnumerable enumerable)
             {
                 var enumr1 = enumerable.GetEnumerator();
-                var used = new List<object>();
-
-                var index = 0;
-                while (true)
+                try
                 {
-                    var ptr1 = enumr1.MoveNext();
-
-                    if (!ptr1)
+                    var index = 0;
+                    while (true)
                     {
-                        yield break;
+                        var ptr1 = enumr1.MoveNext();
+
+                        if (!ptr1)
+                        {
+                            yield break;
+                        }
+
+                        var data1 = enumr1.Current;
+
+                        var diffs = DoAssignmentIssues(item1Name, null, data1, visited, ignoreProperties);
+                        foreach (var diff in diffs)
+                        {
+                            yield return new AssignmentIssue(diff.ObjectName, diff.Message, index);
+                        }
+
+                        index++;
                     }
-
-                    var data1 = enumr1.Current;
-
-                    var diffs = DoAssignmentIssues(item1Name, null, data1, visited, ignoreProperties);
-                    foreach (var diff in diffs)
-                    {
-                        yield return new AssignmentIssue(diff.ObjectName, diff.Message, index);
-                    }
-
-                    index++;
+                }
+                finally
+                {
+                    // The non-generic IEnumerator has no Dispose, but most
+                    // implementations are disposable. Not disposing leaks
+                    // whatever the source enumerator holds open.
+                    (enumr1 as IDisposable)?.Dispose();
                 }
             }
 
@@ -245,29 +255,6 @@ namespace Tharga.Test.Toolkit
                 }
                 //}
             }
-        }
-
-        private static object GetValueFromPropertyOrField(string item1Name, string item2Name, object s2, string name, out IAssignmentIssue diff)
-        {
-            diff = null;
-
-            var prop = s2.GetType().GetProperty(name);
-            if (prop != null)
-            {
-                var val = prop.GetValue(s2, null);
-                return val;
-            }
-
-            var field = s2.GetType().GetField(name);
-            if (field != null)
-            {
-                var val = field.GetValue(s2);
-                return val;
-            }
-
-            //diff = new Diff(item1Name, item2Name, $"Cannot find the property or field named {name} in object of type {s2.GetType()}.", null);
-            //return null;
-            throw new NotImplementedException();
         }
 
         private static object GetDefault(Type type)
