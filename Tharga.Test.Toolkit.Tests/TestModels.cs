@@ -105,6 +105,98 @@ internal sealed class Settings
     public bool UseTls { get; init; }
 }
 
+internal sealed class SharedState
+{
+    public static readonly string SharedField = null;
+
+    public static string Shared { get; set; }
+
+    public string Name { get; init; }
+}
+
+internal sealed class Defaulted
+{
+    public static Defaulted Default => new() { Name = "default" };
+
+    public string Name { get; init; }
+}
+
+internal struct Spot
+{
+    public static Spot Origin => default;
+
+    public int X { get; init; }
+    public int Y { get; init; }
+}
+
+internal sealed class Marker
+{
+    public Spot Position { get; init; }
+}
+
+internal sealed class Restricted
+{
+    public string Name { get; init; }
+    internal string Note { get; init; }
+}
+
+internal sealed record Contact(string Name, string Email);
+
+internal sealed class Contacts
+{
+    public Contact Primary { get; init; }
+    public Contact Backup { get; init; }
+}
+
+internal sealed class Account
+{
+    public int Id { get; init; }
+    public string Owner { get; init; }
+
+    public override bool Equals(object obj) => obj is Account other && other.Id == Id;
+
+    public override int GetHashCode() => Id;
+}
+
+internal sealed class Transfer
+{
+    public Account From { get; init; }
+    public Account To { get; init; }
+}
+
+internal sealed class Route
+{
+    public Point Start { get; init; }
+    public Point End { get; init; }
+}
+
+internal sealed record Link
+{
+    public string Name { get; init; }
+    public Link Next { get; set; }
+}
+
+internal struct Angle
+{
+    public int Degrees { get; init; }
+    public Angle Normalized => this;
+}
+
+internal sealed class Bearing
+{
+    public Angle Heading { get; init; }
+}
+
+internal sealed record Money(decimal Amount)
+{
+    public Money Abs => new(Math.Abs(Amount));
+}
+
+internal sealed class Wallet
+{
+    public Money Balance { get; init; }
+}
+
 internal static class AssignedModels
 {
     public static Customer Customer() => new() { Id = 7, Name = "Ada" };

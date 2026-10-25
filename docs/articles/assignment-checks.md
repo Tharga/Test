@@ -4,7 +4,7 @@ The `AssignmentExtension` class adds three helpers to `object` and `Type`. They 
 
 ## `IsAssigned()`
 
-`object.IsAssigned(string[] ignoreProperties = null)` recursively walks the object graph and returns `true` only if every property and field holds a non-default value.
+`object.IsAssigned(string[] ignoreProperties = null)` recursively walks the object graph and returns `true` only if every public instance property and field holds a non-default value.
 
 ```csharp
 var customer = new Customer { Id = 7, Name = "Ada", Country = "SE" };
@@ -29,6 +29,20 @@ Default values that count as "not assigned":
 | other structs | never as a whole; each member is checked |
 
 > **Watch out for `bool`.** A `false` value is treated as not assigned. If `false` is the genuine business value, add the member to `ignoreProperties` (see below). The same goes for any scalar whose default is a real value, such as a count of `0` or a `TimeOnly` of midnight.
+
+### Which members are checked
+
+Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not.
+
+Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop cycles:
+
+- An object instance that is reached along a second path is not checked again.
+- A value that is equal to one of the objects it was reached through is not walked. That covers a struct or record whose member returns an equal copy of itself, such as `Angle Normalized => this` or `Money Abs => new Money(Math.Abs(Amount))`.
+
+> **Changed in 1.16.**
+>
+> - Static members are no longer checked. Before 1.16 the public static fields and properties of a type were walked as if they belonged to each instance, so a `null` static such as `public static string Shared { get; set; }` was reported, and a static property that returns a new instance, such as `public static Foo Default => new Foo()`, was walked again and again until the stack overflowed.
+> - Each object is checked even when it equals another object elsewhere in the graph. Before 1.16 an object that was equal to one already checked was skipped: a record or struct with the same values was reported under the first path only, and an object whose `Equals` compares only some members, such as an `Id`, could hide its own unset members completely. If an assertion starts failing after the upgrade, the value it names really is unset.
 
 ### Which value types are compared as a whole
 
