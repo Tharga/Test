@@ -116,7 +116,10 @@ namespace Tharga.Test.Toolkit
         /// </remarks>
         public static IEnumerable<IAssignmentIssue> AssignmentIssues(this object s1, string[] ignoreProperties = null)
         {
-            return DoAssignmentIssues(null, null, s1, new HashSet<object>(ReferenceIdentityComparer.Instance), AncestorPath.Empty, ignoreProperties);
+            foreach (var issue in DoAssignmentIssues(null, null, s1, new HashSet<object>(ReferenceIdentityComparer.Instance), AncestorPath.Empty, ignoreProperties))
+            {
+                yield return issue;
+            }
         }
 
         private static IEnumerable<IAssignmentIssue> DoAssignmentIssues(string parentObject1Name, string field1Name, object s1, HashSet<object> visited, AncestorPath ancestors, string[] ignoreProperties)

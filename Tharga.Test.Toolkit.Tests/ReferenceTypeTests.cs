@@ -120,6 +120,18 @@ public class ReferenceTypeTests
     }
 
     [Fact]
+    public void Each_enumeration_of_the_result_starts_fresh()
+    {
+        var issues = new Order { Customer = new Customer { Id = 7 }, Lines = [AssignedModels.Line()] }.AssignmentIssues();
+
+        var first = issues.Select(x => x.Message).ToArray();
+        var second = issues.Select(x => x.Message).ToArray();
+
+        Assert.Equal(["The field 'Order.Customer.Name' is not assigned."], first);
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
     public void A_cyclic_graph_is_walked_once_per_instance()
     {
         var root = new Node { Name = "root" };
