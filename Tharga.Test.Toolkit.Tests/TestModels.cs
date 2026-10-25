@@ -53,6 +53,40 @@ internal sealed class Shape
     public Point Location { get; init; }
 }
 
+internal sealed class Scalars
+{
+    public long Total { get; init; }
+    public float Weight { get; init; }
+    public char Initial { get; init; }
+    public Guid Key { get; init; }
+    public DateTimeOffset Created { get; init; }
+    public DateOnly Born { get; init; }
+    public TimeOnly Opens { get; init; }
+    public System.Numerics.BigInteger Large { get; init; }
+}
+
+internal sealed class NullableScalars
+{
+    public long? Total { get; init; }
+    public Guid? Key { get; init; }
+}
+
+internal struct Measurement
+{
+    public long Amount { get; init; }
+    public Guid Unit { get; init; }
+}
+
+internal sealed class Reading
+{
+    public Measurement Value { get; init; }
+}
+
+internal sealed class Pair
+{
+    public (int Count, string Label) Value { get; init; }
+}
+
 internal sealed class FieldHolder
 {
     public string Label;

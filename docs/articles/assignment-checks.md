@@ -13,19 +13,38 @@ Assert.True(customer.IsAssigned());
 
 Default values that count as "not assigned":
 
-| Type | Default |
+| Type | Not assigned when |
 |---|---|
 | `string` | `null` and `""` (string default) |
-| `int` / `decimal` / `double` | `0` |
+| numbers: `int`, `long`, `short`, `byte`, `float`, `double`, `decimal`, `nint`, `Half`, `Int128`, `BigInteger`, … | `0` |
+| `char` | `'\0'` |
 | `bool` | `false` |
-| `DateTime` | `DateTime.MinValue` |
-| `TimeSpan` | `TimeSpan.Zero` |
+| `Guid` | `Guid.Empty` |
+| `DateTime` / `DateTimeOffset` / `DateOnly` | `MinValue` |
+| `TimeSpan` / `TimeOnly` | `TimeSpan.Zero` / midnight (`TimeOnly.MinValue`) |
 | `enum` | the zero-valued member |
+| `Nullable<T>`, such as `long?` or `Guid?` | `null`, or the default of `T` |
 | `Uri` | `null` |
-| reference types | `null` |
-| value types | recursively checked member-by-member |
+| other reference types | `null`; a non-null one has its members checked |
+| other structs | never as a whole; each member is checked |
 
-> **Watch out for `bool`.** A `false` value is treated as not assigned. If `false` is the genuine business value, add the member to `ignoreProperties` (see below).
+> **Watch out for `bool`.** A `false` value is treated as not assigned. If `false` is the genuine business value, add the member to `ignoreProperties` (see below). The same goes for any scalar whose default is a real value, such as a count of `0` or a `TimeOnly` of midnight.
+
+### Which value types are compared as a whole
+
+A value type is compared with its default when it is a *scalar*:
+
+- an `enum`;
+- a non-generic struct declared in the `System` namespace. That covers every primitive (`int`, `long`, `bool`, `char`, `double`, `nint`, …) as well as `decimal`, `Guid`, `DateTime`, `DateTimeOffset`, `TimeSpan`, `DateOnly`, `TimeOnly`, `Half`, `Int128` and `UInt128`;
+- `BigInteger` or `Complex`.
+
+Any other struct is checked member by member, and each unassigned member is reported with its own path. That covers your own structs and generic structs such as `ValueTuple<…>` and `KeyValuePair<,>`.
+
+A nullable value such as `long?` is reported when it is `null`, and also when it holds the default of the underlying type.
+
+> **Changed in 1.15.** Every scalar is now compared with its default. Before 1.15 only `int`, `decimal`, `double`, `bool`, `DateTime`, `TimeSpan` and enums were. Any other value type was checked member by member instead, so a zero `long`, `float`, `short`, `byte` or `char`, and an empty `Guid` on runtimes before .NET 9, passed as assigned. These are now reported. If an assertion starts failing after the upgrade, the value it names really is unset: assign it, or add it to `ignoreProperties` if the default is the value you want.
+>
+> Checking those types member by member also misfired the other way. A `DateOnly`, `TimeOnly` or `BigInteger` was reported whatever its value, and so was any `Guid` on .NET 9 and later. A `DateTimeOffset` member overflowed the stack. They are now compared as a whole, so a value that is set passes.
 
 ### Collections
 
