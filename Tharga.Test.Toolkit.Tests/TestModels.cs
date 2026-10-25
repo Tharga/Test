@@ -176,6 +176,27 @@ internal sealed record Link
     public Link Next { get; set; }
 }
 
+internal struct Angle
+{
+    public int Degrees { get; init; }
+    public Angle Normalized => this;
+}
+
+internal sealed class Bearing
+{
+    public Angle Heading { get; init; }
+}
+
+internal sealed record Money(decimal Amount)
+{
+    public Money Abs => new(Math.Abs(Amount));
+}
+
+internal sealed class Wallet
+{
+    public Money Balance { get; init; }
+}
+
 internal static class AssignedModels
 {
     public static Customer Customer() => new() { Id = 7, Name = "Ada" };

@@ -56,8 +56,10 @@ namespace Tharga.Test.Toolkit
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
         /// </para>
         /// <para>
-        /// Each object is checked on its own, even when it is equal to another object in the graph. An object instance that
-        /// is reached along a second path is not checked again, which is what stops cycles.
+        /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
+        /// cycles: an object instance that is reached along a second path is not checked again, and a value that is equal to
+        /// one of the objects it was reached through is not walked, such as a struct or record whose member returns an equal
+        /// copy of itself.
         /// </para>
         /// <para>
         /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
@@ -91,8 +93,10 @@ namespace Tharga.Test.Toolkit
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
         /// </para>
         /// <para>
-        /// Each object is checked on its own, even when it is equal to another object in the graph. An object instance that
-        /// is reached along a second path is not checked again, which is what stops cycles.
+        /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
+        /// cycles: an object instance that is reached along a second path is not checked again, and a value that is equal to
+        /// one of the objects it was reached through is not walked, such as a struct or record whose member returns an equal
+        /// copy of itself.
         /// </para>
         /// <para>
         /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
@@ -112,10 +116,10 @@ namespace Tharga.Test.Toolkit
         /// </remarks>
         public static IEnumerable<IAssignmentIssue> AssignmentIssues(this object s1, string[] ignoreProperties = null)
         {
-            return DoAssignmentIssues(null, null, s1, new HashSet<object>(ReferenceIdentityComparer.Instance), ignoreProperties);
+            return DoAssignmentIssues(null, null, s1, new HashSet<object>(ReferenceIdentityComparer.Instance), AncestorPath.Empty, ignoreProperties);
         }
 
-        private static IEnumerable<IAssignmentIssue> DoAssignmentIssues(string parentObject1Name, string field1Name, object s1, HashSet<object> visited, string[] ignoreProperties)
+        private static IEnumerable<IAssignmentIssue> DoAssignmentIssues(string parentObject1Name, string field1Name, object s1, HashSet<object> visited, AncestorPath ancestors, string[] ignoreProperties)
         {
             if (s1 == null)
             {
@@ -146,21 +150,26 @@ namespace Tharga.Test.Toolkit
             }
             else if (tp1.IsValueType)
             {
-                foreach (var diff in CheckMembers(item1Name, s1, visited, ignoreProperties))
+                if (ancestors.HasEqual(s1))
+                {
+                    yield break;
+                }
+
+                foreach (var diff in CheckMembers(item1Name, s1, visited, ancestors, ignoreProperties))
                 {
                     yield return diff;
                 }
             }
             else
             {
-                foreach (var diff1 in CheckReferenceTypes(item1Name, s1, visited, ignoreProperties))
+                foreach (var diff1 in CheckReferenceTypes(item1Name, s1, visited, ancestors, ignoreProperties))
                 {
                     yield return diff1;
                 }
             }
         }
 
-        private static IEnumerable<IAssignmentIssue> CheckReferenceTypes(string item1Name, object s1, HashSet<object> visited, string[] ignoreProperties)
+        private static IEnumerable<IAssignmentIssue> CheckReferenceTypes(string item1Name, object s1, HashSet<object> visited, AncestorPath ancestors, string[] ignoreProperties)
         {
             if (s1 is IEnumerable enumerable)
             {
@@ -179,7 +188,7 @@ namespace Tharga.Test.Toolkit
 
                         var data1 = enumr1.Current;
 
-                        var diffs = DoAssignmentIssues(item1Name, null, data1, visited, ignoreProperties);
+                        var diffs = DoAssignmentIssues(item1Name, null, data1, visited, ancestors, ignoreProperties);
                         foreach (var diff in diffs)
                         {
                             yield return new AssignmentIssue(diff.ObjectName, diff.Message, index);
@@ -196,9 +205,9 @@ namespace Tharga.Test.Toolkit
                     (enumr1 as IDisposable)?.Dispose();
                 }
             }
-            else if (visited.Add(s1))
+            else if (visited.Add(s1) && !ancestors.HasEqual(s1))
             {
-                foreach (var diff2 in CheckMembers(item1Name, s1, visited, ignoreProperties))
+                foreach (var diff2 in CheckMembers(item1Name, s1, visited, ancestors, ignoreProperties))
                 {
                     yield return diff2;
                 }
@@ -217,15 +226,16 @@ namespace Tharga.Test.Toolkit
             }
         }
 
-        private static IEnumerable<IAssignmentIssue> CheckMembers(string item1Name, object s1, HashSet<object> visited, string[] ignoreProperties)
+        private static IEnumerable<IAssignmentIssue> CheckMembers(string item1Name, object s1, HashSet<object> visited, AncestorPath ancestors, string[] ignoreProperties)
         {
             var tp = s1.GetType();
+            var memberAncestors = ancestors.With(s1);
 
             var fields = tp.GetFields(InstanceMembers);
             foreach (var field in fields)
             {
                 var f1 = field.GetValue(s1);
-                var diffs = DoAssignmentIssues(item1Name, field.Name, f1, visited, ignoreProperties);
+                var diffs = DoAssignmentIssues(item1Name, field.Name, f1, visited, memberAncestors, ignoreProperties);
 
                 foreach (var diff in diffs)
                 {
@@ -237,7 +247,7 @@ namespace Tharga.Test.Toolkit
             foreach (var prop in props)
             {
                 var v1 = prop.GetValue(s1, null);
-                var diffs = DoAssignmentIssues(item1Name, prop.Name, v1, visited, ignoreProperties);
+                var diffs = DoAssignmentIssues(item1Name, prop.Name, v1, visited, memberAncestors, ignoreProperties);
 
                 foreach (var diff in diffs)
                 {

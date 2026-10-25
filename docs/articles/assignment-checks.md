@@ -34,12 +34,15 @@ Default values that count as "not assigned":
 
 Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not.
 
-Each object is checked on its own, even when it is equal to another object in the graph. An object instance that is reached along a second path is not checked again, which is what stops cycles.
+Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop cycles:
+
+- An object instance that is reached along a second path is not checked again.
+- A value that is equal to one of the objects it was reached through is not walked. That covers a struct or record whose member returns an equal copy of itself, such as `Angle Normalized => this` or `Money Abs => new Money(Math.Abs(Amount))`.
 
 > **Changed in 1.16.**
 >
 > - Static members are no longer checked. Before 1.16 the public static fields and properties of a type were walked as if they belonged to each instance, so a `null` static such as `public static string Shared { get; set; }` was reported, and a static property that returns a new instance, such as `public static Foo Default => new Foo()`, was walked again and again until the stack overflowed.
-> - Each object is checked even when it equals another one. Before 1.16 an object that was equal to one already checked was skipped: a record or struct with the same values was reported under the first path only, and an object whose `Equals` compares only some members, such as an `Id`, could hide its own unset members completely. If an assertion starts failing after the upgrade, the value it names really is unset.
+> - Each object is checked even when it equals another object elsewhere in the graph. Before 1.16 an object that was equal to one already checked was skipped: a record or struct with the same values was reported under the first path only, and an object whose `Equals` compares only some members, such as an `Id`, could hide its own unset members completely. If an assertion starts failing after the upgrade, the value it names really is unset.
 
 ### Which value types are compared as a whole
 

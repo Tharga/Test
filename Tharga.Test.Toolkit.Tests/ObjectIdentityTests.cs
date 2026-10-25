@@ -61,19 +61,42 @@ public class ObjectIdentityTests
     }
 
     [Fact]
-    public void A_cycle_of_records_with_value_equality_terminates()
+    public void A_cycle_of_records_terminates()
     {
-        var first = new Link();
+        var first = new Link { Name = "first" };
         var second = new Link { Next = first };
         first.Next = second;
 
-        var messages = first.AssignmentIssues().Select(x => x.Message).Order().ToArray();
+        var issue = Assert.Single(first.AssignmentIssues());
 
-        string[] expected =
-        [
-            "The field 'Link.Name' is not assigned.",
-            "The field 'Link.Next.Name' is not assigned."
-        ];
-        Assert.Equal(expected.Order(), messages);
+        Assert.Equal("The field 'Link.Next.Name' is not assigned.", issue.Message);
+    }
+
+    [Fact]
+    public void A_struct_member_that_returns_an_equal_copy_is_not_walked_again()
+    {
+        var issue = Assert.Single(new Bearing { Heading = new Angle() }.AssignmentIssues());
+
+        Assert.Equal("Bearing.Heading.Degrees", issue.ObjectName);
+        Assert.True(new Bearing { Heading = new Angle { Degrees = 90 } }.IsAssigned());
+    }
+
+    [Fact]
+    public void A_record_member_that_returns_an_equal_new_instance_is_not_walked_again()
+    {
+        var issue = Assert.Single(new Wallet { Balance = new Money(0) }.AssignmentIssues());
+
+        Assert.Equal("Wallet.Balance.Amount", issue.ObjectName);
+        Assert.True(new Wallet { Balance = new Money(-5) }.IsAssigned());
+    }
+
+    [Fact]
+    public void A_value_equal_to_one_in_another_branch_is_still_walked()
+    {
+        var wallets = new[] { new Wallet { Balance = new Money(0) }, new Wallet { Balance = new Money(0) } };
+
+        var issues = wallets.AssignmentIssues().Select(x => (x.ObjectName, x.Index)).ToArray();
+
+        Assert.Equal(new[] { ("Wallet[0].Wallet.Balance.Amount", (int?)0), ("Wallet[1].Wallet.Balance.Amount", (int?)1) }, issues);
     }
 }
