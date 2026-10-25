@@ -52,6 +52,9 @@ namespace Tharga.Test.Toolkit
         /// <param name="ignoreProperties">Member paths that are not reported, for example <c>"Customer.Name"</c> or <c>"Order.Customer.Name"</c>.</param>
         /// <remarks>
         /// <para>
+        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
+        /// </para>
+        /// <para>
         /// A scalar value type is compared with its default as a whole. Scalars are enums, every non-generic struct declared
         /// in the <c>System</c> namespace (the primitives such as <c>int</c>, <c>long</c>, <c>bool</c> and <c>char</c>, and
         /// <c>decimal</c>, <c>Guid</c>, <c>DateTime</c>, <c>DateTimeOffset</c>, <c>TimeSpan</c>, <c>DateOnly</c>, <c>TimeOnly</c>
@@ -76,6 +79,9 @@ namespace Tharga.Test.Toolkit
         /// <param name="ignoreProperties">Member paths that are not reported, for example <c>"Customer.Name"</c> or <c>"Order.Customer.Name"</c>.</param>
         /// <returns>The unassigned members. An issue found inside a collection element carries the element's position in <see cref="IAssignmentIssue.Index"/>.</returns>
         /// <remarks>
+        /// <para>
+        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
+        /// </para>
         /// <para>
         /// A scalar value type is compared with its default as a whole. Scalars are enums, every non-generic struct declared
         /// in the <c>System</c> namespace (the primitives such as <c>int</c>, <c>long</c>, <c>bool</c> and <c>char</c>, and

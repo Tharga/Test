@@ -53,6 +53,15 @@ public class ReferenceTypeTests
         Assert.True(new Customer { Id = 7, Name = string.Empty }.IsAssigned());
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void A_non_null_string_is_assigned_even_when_empty(string value)
+    {
+        Assert.True(value.IsAssigned());
+        Assert.Empty(new FieldHolder { Label = value }.AssignmentIssues());
+    }
+
     [Fact]
     public void A_null_uri_member_is_reported()
     {

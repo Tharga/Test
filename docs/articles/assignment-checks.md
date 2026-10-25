@@ -15,7 +15,7 @@ Default values that count as "not assigned":
 
 | Type | Not assigned when |
 |---|---|
-| `string` | `null` and `""` (string default) |
+| `string` | `null`. An empty string `""` counts as assigned, since it is often a real value. |
 | numbers: `int`, `long`, `short`, `byte`, `float`, `double`, `decimal`, `nint`, `Half`, `Int128`, `BigInteger`, … | `0` |
 | `char` | `'\0'` |
 | `bool` | `false` |
