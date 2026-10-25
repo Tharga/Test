@@ -102,51 +102,39 @@ namespace Tharga.Test.Toolkit
                 {
                     yield return new AssignmentIssue(parentObject1Name, $"The field '{parentObject1Name}.{field1Name}' is not assigned.", null);
                 }
+
+                yield break;
+            }
+
+            if (s1 is string || s1 is Uri)
+            {
+                yield break;
+            }
+
+            var tp1 = s1.GetType();
+
+            var pp1 = field1Name ?? tp1.Name;
+            var item1Name = parentObject1Name != null ? $"{parentObject1Name}.{pp1}" : tp1.Name;
+
+            if (IsScalar(tp1))
+            {
+                foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
+                {
+                    yield return diff2;
+                }
+            }
+            else if (tp1.IsValueType)
+            {
+                foreach (var diff in CheckValueTypes(item1Name, s1, visited, ignoreProperties))
+                {
+                    yield return diff;
+                }
             }
             else
             {
-                var tp1 = s1.GetType();
-
-                var pp1 = field1Name ?? s1.GetType().Name;
-                var item1Name = parentObject1Name != null ? $"{parentObject1Name}.{pp1}" : s1.GetType().Name;
-
-                if (s1 is string)
+                foreach (var diff1 in CheckReferenceTypes(item1Name, s1, visited, ignoreProperties))
                 {
-                    if (s1.ToString().Equals(GetDefault(tp1)))
-                    {
-                        if (ignoreProperties == null || ignoreProperties.All(x => x != $"{parentObject1Name}.{field1Name}"))
-                        {
-                            yield return new AssignmentIssue(parentObject1Name, $"The string value '{parentObject1Name}.{field1Name}' is not assigned.", null);
-                        }
-                    }
-                }
-                else if (s1 is Uri)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (IsScalar(tp1))
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (tp1.IsValueType)
-                {
-                    foreach (var diff in CheckValueTypes(item1Name, s1, visited, ignoreProperties))
-                    {
-                        yield return diff;
-                    }
-                }
-                else
-                {
-                    foreach (var diff1 in CheckReferenceTypes(item1Name, s1, visited, ignoreProperties))
-                    {
-                        yield return diff1;
-                    }
+                    yield return diff1;
                 }
             }
         }

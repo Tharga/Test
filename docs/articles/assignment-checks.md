@@ -88,9 +88,18 @@ Each `IAssignmentIssue` carries:
 
 | Member | Meaning |
 |---|---|
-| `ObjectName` | dotted path to the failing member, e.g. `Customer.Name` |
-| `Message` | human-readable description (`"The string value 'Customer.Name' is not assigned."`) |
+| `ObjectName` | where the issue was found. For a `null` member it is the path of the object that holds the member (`Customer` for a null `Customer.Name`). For a member that holds its default value it is the path of the member itself (`Customer.Id`). |
+| `Message` | human-readable description that names the member's full path |
 | `Index` | element index when the issue lives inside an `IEnumerable` element, otherwise `null` |
+
+For example, `new Customer { Id = 0, Name = null }` gives two issues:
+
+| `ObjectName` | `Message` |
+|---|---|
+| `Customer` | `The field 'Customer.Name' is not assigned.` |
+| `Customer.Id` | `Value of type Int32 in 'Customer.Id' is not assigned.` |
+
+`ObjectName` alone does not tell one null member of an object from another, so read the member's path from `Message`.
 
 When the failure is inside a collection element, `Index` holds the element's position. `ObjectName` names the element by its type, not its position (`Order.Lines.OrderLine` for any element of `Order.Lines`), so read `Index` to tell elements apart.
 

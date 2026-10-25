@@ -32,6 +32,22 @@ public class ReferenceTypeTests
     }
 
     [Fact]
+    public void A_null_member_is_named_by_its_parent_and_a_default_value_by_its_own_path()
+    {
+        var issues = new Customer { Id = 0, Name = null }.AssignmentIssues()
+            .Select(x => (x.ObjectName, x.Message))
+            .Order()
+            .ToArray();
+
+        (string, string)[] expected =
+        [
+            ("Customer", "The field 'Customer.Name' is not assigned."),
+            ("Customer.Id", "Value of type Int32 in 'Customer.Id' is not assigned.")
+        ];
+        Assert.Equal(expected, issues);
+    }
+
+    [Fact]
     public void An_empty_string_member_is_not_reported()
     {
         Assert.True(new Customer { Id = 7, Name = string.Empty }.IsAssigned());
