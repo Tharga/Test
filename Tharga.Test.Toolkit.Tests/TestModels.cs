@@ -140,6 +140,42 @@ internal sealed class Restricted
     internal string Note { get; init; }
 }
 
+internal sealed record Contact(string Name, string Email);
+
+internal sealed class Contacts
+{
+    public Contact Primary { get; init; }
+    public Contact Backup { get; init; }
+}
+
+internal sealed class Account
+{
+    public int Id { get; init; }
+    public string Owner { get; init; }
+
+    public override bool Equals(object obj) => obj is Account other && other.Id == Id;
+
+    public override int GetHashCode() => Id;
+}
+
+internal sealed class Transfer
+{
+    public Account From { get; init; }
+    public Account To { get; init; }
+}
+
+internal sealed class Route
+{
+    public Point Start { get; init; }
+    public Point End { get; init; }
+}
+
+internal sealed record Link
+{
+    public string Name { get; init; }
+    public Link Next { get; set; }
+}
+
 internal static class AssignedModels
 {
     public static Customer Customer() => new() { Id = 7, Name = "Ada" };

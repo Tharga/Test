@@ -56,6 +56,10 @@ namespace Tharga.Test.Toolkit
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
         /// </para>
         /// <para>
+        /// Each object is checked on its own, even when it is equal to another object in the graph. An object instance that
+        /// is reached along a second path is not checked again, which is what stops cycles.
+        /// </para>
+        /// <para>
         /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
         /// </para>
         /// <para>
@@ -87,6 +91,10 @@ namespace Tharga.Test.Toolkit
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
         /// </para>
         /// <para>
+        /// Each object is checked on its own, even when it is equal to another object in the graph. An object instance that
+        /// is reached along a second path is not checked again, which is what stops cycles.
+        /// </para>
+        /// <para>
         /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
         /// </para>
         /// <para>
@@ -104,10 +112,10 @@ namespace Tharga.Test.Toolkit
         /// </remarks>
         public static IEnumerable<IAssignmentIssue> AssignmentIssues(this object s1, string[] ignoreProperties = null)
         {
-            return DoAssignmentIssues(null, null, s1, new List<object>(), ignoreProperties);
+            return DoAssignmentIssues(null, null, s1, new HashSet<object>(ReferenceIdentityComparer.Instance), ignoreProperties);
         }
 
-        private static IEnumerable<IAssignmentIssue> DoAssignmentIssues(string parentObject1Name, string field1Name, object s1, List<object> visited, string[] ignoreProperties)
+        private static IEnumerable<IAssignmentIssue> DoAssignmentIssues(string parentObject1Name, string field1Name, object s1, HashSet<object> visited, string[] ignoreProperties)
         {
             if (s1 == null)
             {
@@ -138,7 +146,7 @@ namespace Tharga.Test.Toolkit
             }
             else if (tp1.IsValueType)
             {
-                foreach (var diff in CheckValueTypes(item1Name, s1, visited, ignoreProperties))
+                foreach (var diff in CheckMembers(item1Name, s1, visited, ignoreProperties))
                 {
                     yield return diff;
                 }
@@ -152,7 +160,7 @@ namespace Tharga.Test.Toolkit
             }
         }
 
-        private static IEnumerable<IAssignmentIssue> CheckReferenceTypes(string item1Name, object s1, List<object> visited, string[] ignoreProperties)
+        private static IEnumerable<IAssignmentIssue> CheckReferenceTypes(string item1Name, object s1, HashSet<object> visited, string[] ignoreProperties)
         {
             if (s1 is IEnumerable enumerable)
             {
@@ -188,23 +196,13 @@ namespace Tharga.Test.Toolkit
                     (enumr1 as IDisposable)?.Dispose();
                 }
             }
-            else
+            else if (visited.Add(s1))
             {
                 foreach (var diff2 in CheckMembers(item1Name, s1, visited, ignoreProperties))
                 {
                     yield return diff2;
                 }
             }
-        }
-
-        private static IEnumerable<IAssignmentIssue> CheckValueTypes(string item1Name, object s1, List<object> visited, string[] ignoreProperties)
-        {
-            foreach (var diff2 in CheckMembers(item1Name, s1, visited, ignoreProperties))
-            {
-                yield return diff2;
-            }
-
-            visited.Add(s1);
         }
 
         private static IEnumerable<IAssignmentIssue> CheckValue(object s1, string item1Name, string[] ignoreProperties)
@@ -219,15 +217,8 @@ namespace Tharga.Test.Toolkit
             }
         }
 
-        private static IEnumerable<IAssignmentIssue> CheckMembers(string item1Name, object s1, List<object> visited, string[] ignoreProperties)
+        private static IEnumerable<IAssignmentIssue> CheckMembers(string item1Name, object s1, HashSet<object> visited, string[] ignoreProperties)
         {
-            if (visited.Contains(s1))
-            {
-                yield break;
-            }
-
-            visited.Add(s1);
-
             var tp = s1.GetType();
 
             var fields = tp.GetFields(InstanceMembers);

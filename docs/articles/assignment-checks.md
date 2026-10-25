@@ -34,7 +34,12 @@ Default values that count as "not assigned":
 
 Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not.
 
-> **Changed in 1.16.** Static members are no longer checked. Before 1.16 the public static fields and properties of a type were walked as if they belonged to each instance, so a `null` static such as `public static string Shared { get; set; }` was reported, and a static property that returns a new instance, such as `public static Foo Default => new Foo()`, was walked again and again until the stack overflowed.
+Each object is checked on its own, even when it is equal to another object in the graph. An object instance that is reached along a second path is not checked again, which is what stops cycles.
+
+> **Changed in 1.16.**
+>
+> - Static members are no longer checked. Before 1.16 the public static fields and properties of a type were walked as if they belonged to each instance, so a `null` static such as `public static string Shared { get; set; }` was reported, and a static property that returns a new instance, such as `public static Foo Default => new Foo()`, was walked again and again until the stack overflowed.
+> - Each object is checked even when it equals another one. Before 1.16 an object that was equal to one already checked was skipped: a record or struct with the same values was reported under the first path only, and an object whose `Equals` compares only some members, such as an `Id`, could hide its own unset members completely. If an assertion starts failing after the upgrade, the value it names really is unset.
 
 ### Which value types are compared as a whole
 
