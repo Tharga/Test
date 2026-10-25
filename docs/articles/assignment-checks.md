@@ -4,7 +4,7 @@ The `AssignmentExtension` class adds three helpers to `object` and `Type`. They 
 
 ## `IsAssigned()`
 
-`object.IsAssigned(string[] ignoreProperties = null)` recursively walks the object graph and returns `true` only if every property and field holds a non-default value.
+`object.IsAssigned(string[] ignoreProperties = null)` recursively walks the object graph and returns `true` only if every public instance property and field holds a non-default value.
 
 ```csharp
 var customer = new Customer { Id = 7, Name = "Ada", Country = "SE" };
@@ -29,6 +29,12 @@ Default values that count as "not assigned":
 | other structs | never as a whole; each member is checked |
 
 > **Watch out for `bool`.** A `false` value is treated as not assigned. If `false` is the genuine business value, add the member to `ignoreProperties` (see below). The same goes for any scalar whose default is a real value, such as a count of `0` or a `TimeOnly` of midnight.
+
+### Which members are checked
+
+Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not.
+
+> **Changed in 1.16.** Static members are no longer checked. Before 1.16 the public static fields and properties of a type were walked as if they belonged to each instance, so a `null` static such as `public static string Shared { get; set; }` was reported, and a static property that returns a new instance, such as `public static Foo Default => new Foo()`, was walked again and again until the stack overflowed.
 
 ### Which value types are compared as a whole
 

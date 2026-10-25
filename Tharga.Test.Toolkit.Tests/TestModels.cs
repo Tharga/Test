@@ -105,6 +105,41 @@ internal sealed class Settings
     public bool UseTls { get; init; }
 }
 
+internal sealed class SharedState
+{
+    public static readonly string SharedField = null;
+
+    public static string Shared { get; set; }
+
+    public string Name { get; init; }
+}
+
+internal sealed class Defaulted
+{
+    public static Defaulted Default => new() { Name = "default" };
+
+    public string Name { get; init; }
+}
+
+internal struct Spot
+{
+    public static Spot Origin => default;
+
+    public int X { get; init; }
+    public int Y { get; init; }
+}
+
+internal sealed class Marker
+{
+    public Spot Position { get; init; }
+}
+
+internal sealed class Restricted
+{
+    public string Name { get; init; }
+    internal string Note { get; init; }
+}
+
 internal static class AssignedModels
 {
     public static Customer Customer() => new() { Id = 7, Name = "Ada" };
