@@ -41,11 +41,30 @@ namespace Tharga.Test.Toolkit
             }
         }
 
+        /// <summary>
+        /// Returns <c>true</c> when no field or property in the object graph of <paramref name="s1"/> holds its default value.
+        /// </summary>
+        /// <param name="s1">The object to check.</param>
+        /// <param name="ignoreProperties">Member paths that are not reported, for example <c>"Customer.Name"</c> or <c>"Order.Customer.Name"</c>.</param>
+        /// <remarks>
+        /// A collection is checked by its elements only. Members declared on the collection type itself, and properties
+        /// such as <c>Count</c> or <c>IsReadOnly</c>, are not checked, so an empty collection counts as assigned.
+        /// </remarks>
         public static bool IsAssigned(this object s1, string[] ignoreProperties = null)
         {
             return !AssignmentIssues(s1, ignoreProperties).Any();
         }
 
+        /// <summary>
+        /// Returns one issue for every field or property in the object graph of <paramref name="s1"/> that holds its default value.
+        /// </summary>
+        /// <param name="s1">The object to check.</param>
+        /// <param name="ignoreProperties">Member paths that are not reported, for example <c>"Customer.Name"</c> or <c>"Order.Customer.Name"</c>.</param>
+        /// <returns>The unassigned members. An issue found inside a collection element carries the element's position in <see cref="IAssignmentIssue.Index"/>.</returns>
+        /// <remarks>
+        /// A collection is checked by its elements only. Members declared on the collection type itself, and properties
+        /// such as <c>Count</c> or <c>IsReadOnly</c>, are not checked, so an empty collection counts as assigned.
+        /// </remarks>
         public static IEnumerable<IAssignmentIssue> AssignmentIssues(this object s1, string[] ignoreProperties = null)
         {
             return DoAssignmentIssues(null, null, s1, new List<object>(), ignoreProperties);
@@ -179,10 +198,12 @@ namespace Tharga.Test.Toolkit
                     (enumr1 as IDisposable)?.Dispose();
                 }
             }
-
-            foreach (var diff2 in CheckMembers(item1Name, s1, visited, ignoreProperties))
+            else
             {
-                yield return diff2;
+                foreach (var diff2 in CheckMembers(item1Name, s1, visited, ignoreProperties))
+                {
+                    yield return diff2;
+                }
             }
         }
 

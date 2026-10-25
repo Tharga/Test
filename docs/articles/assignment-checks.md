@@ -25,9 +25,23 @@ Default values that count as "not assigned":
 | reference types | `null` |
 | value types | recursively checked member-by-member |
 
-`IEnumerable` properties are walked element by element — every item must also be fully assigned.
-
 > **Watch out for `bool`.** A `false` value is treated as not assigned. If `false` is the genuine business value, add the member to `ignoreProperties` (see below).
+
+### Collections
+
+`IEnumerable` values (other than `string`) are walked element by element — every item must also be fully assigned. A `null` collection is reported like any other unassigned reference.
+
+The collection object itself is not inspected, only its elements:
+
+- Members declared on the collection type are not checked. A `Title` property on a class deriving from `List<T>`, or on your own `IEnumerable<T>` implementation, is ignored even when it is `null`.
+- The collection's own properties, such as `Count`, `Capacity` or `IsReadOnly`, are not checked, so an empty collection counts as assigned.
+
+This is deliberate. Checking those members would report every empty list (`Count` is `0`) and every array (`IsReadOnly` is `false`) as unassigned, and would fail on indexers such as `List<T>[int]`. If a collection type carries data of its own that must be set, assert it separately:
+
+```csharp
+Assert.True(order.IsAssigned());
+Assert.NotNull(order.Lines.Title);
+```
 
 ### Ignoring specific members
 
@@ -59,7 +73,7 @@ Each `IAssignmentIssue` carries:
 | `Message` | human-readable description (`"The string value 'Customer.Name' is not assigned."`) |
 | `Index` | element index when the issue lives inside an `IEnumerable` element, otherwise `null` |
 
-When the failure is inside a collection element, `ObjectName` substitutes `[]` with the actual index (`Order.Lines[2].Sku`).
+When the failure is inside a collection element, `Index` holds the element's position. `ObjectName` names the element by its type, not its position (`Order.Lines.OrderLine` for any element of `Order.Lines`), so read `Index` to tell elements apart.
 
 ## `TestAssignments()`
 
