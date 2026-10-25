@@ -2,12 +2,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 
 namespace Tharga.Test.Toolkit
 {
     public static class AssignmentExtension
     {
+        private const string SystemNamespace = "System";
+        private static readonly Type[] NumericScalars = { typeof(BigInteger), typeof(Complex) };
+
         public static IEnumerable<(string method, object data)> TestAssignments(this Type type, Func<Type, object> createSpecimen, string[] ignoreFunctions = null, BindingFlags bindingAttr = BindingFlags.Static | BindingFlags.Public)
         {
             var methods = type.GetMethods(bindingAttr).Where(x => ignoreFunctions == null || ignoreFunctions.All(y => x.Name != y));
@@ -47,8 +51,21 @@ namespace Tharga.Test.Toolkit
         /// <param name="s1">The object to check.</param>
         /// <param name="ignoreProperties">Member paths that are not reported, for example <c>"Customer.Name"</c> or <c>"Order.Customer.Name"</c>.</param>
         /// <remarks>
+        /// <para>
+        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
+        /// </para>
+        /// <para>
+        /// A scalar value type is compared with its default as a whole. Scalars are enums, every non-generic struct declared
+        /// in the <c>System</c> namespace (the primitives such as <c>int</c>, <c>long</c>, <c>bool</c> and <c>char</c>, and
+        /// <c>decimal</c>, <c>Guid</c>, <c>DateTime</c>, <c>DateTimeOffset</c>, <c>TimeSpan</c>, <c>DateOnly</c>, <c>TimeOnly</c>
+        /// and the like), <c>BigInteger</c> and <c>Complex</c>. Any other struct, including generic ones such as
+        /// <c>ValueTuple</c> and <c>KeyValuePair</c>, is checked member by member. A <c>Nullable&lt;T&gt;</c> is reported when it
+        /// is <c>null</c> or holds the default of <c>T</c>.
+        /// </para>
+        /// <para>
         /// A collection is checked by its elements only. Members declared on the collection type itself, and properties
         /// such as <c>Count</c> or <c>IsReadOnly</c>, are not checked, so an empty collection counts as assigned.
+        /// </para>
         /// </remarks>
         public static bool IsAssigned(this object s1, string[] ignoreProperties = null)
         {
@@ -62,8 +79,21 @@ namespace Tharga.Test.Toolkit
         /// <param name="ignoreProperties">Member paths that are not reported, for example <c>"Customer.Name"</c> or <c>"Order.Customer.Name"</c>.</param>
         /// <returns>The unassigned members. An issue found inside a collection element carries the element's position in <see cref="IAssignmentIssue.Index"/>.</returns>
         /// <remarks>
+        /// <para>
+        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
+        /// </para>
+        /// <para>
+        /// A scalar value type is compared with its default as a whole. Scalars are enums, every non-generic struct declared
+        /// in the <c>System</c> namespace (the primitives such as <c>int</c>, <c>long</c>, <c>bool</c> and <c>char</c>, and
+        /// <c>decimal</c>, <c>Guid</c>, <c>DateTime</c>, <c>DateTimeOffset</c>, <c>TimeSpan</c>, <c>DateOnly</c>, <c>TimeOnly</c>
+        /// and the like), <c>BigInteger</c> and <c>Complex</c>. Any other struct, including generic ones such as
+        /// <c>ValueTuple</c> and <c>KeyValuePair</c>, is checked member by member. A <c>Nullable&lt;T&gt;</c> is reported when it
+        /// is <c>null</c> or holds the default of <c>T</c>.
+        /// </para>
+        /// <para>
         /// A collection is checked by its elements only. Members declared on the collection type itself, and properties
         /// such as <c>Count</c> or <c>IsReadOnly</c>, are not checked, so an empty collection counts as assigned.
+        /// </para>
         /// </remarks>
         public static IEnumerable<IAssignmentIssue> AssignmentIssues(this object s1, string[] ignoreProperties = null)
         {
@@ -78,86 +108,39 @@ namespace Tharga.Test.Toolkit
                 {
                     yield return new AssignmentIssue(parentObject1Name, $"The field '{parentObject1Name}.{field1Name}' is not assigned.", null);
                 }
+
+                yield break;
+            }
+
+            if (s1 is string || s1 is Uri)
+            {
+                yield break;
+            }
+
+            var tp1 = s1.GetType();
+
+            var pp1 = field1Name ?? tp1.Name;
+            var item1Name = parentObject1Name != null ? $"{parentObject1Name}.{pp1}" : tp1.Name;
+
+            if (IsScalar(tp1))
+            {
+                foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
+                {
+                    yield return diff2;
+                }
+            }
+            else if (tp1.IsValueType)
+            {
+                foreach (var diff in CheckValueTypes(item1Name, s1, visited, ignoreProperties))
+                {
+                    yield return diff;
+                }
             }
             else
             {
-                var tp1 = s1.GetType();
-
-                var pp1 = field1Name ?? s1.GetType().Name;
-                var item1Name = parentObject1Name != null ? $"{parentObject1Name}.{pp1}" : s1.GetType().Name;
-
-                if (s1 is string)
+                foreach (var diff1 in CheckReferenceTypes(item1Name, s1, visited, ignoreProperties))
                 {
-                    if (s1.ToString().Equals(GetDefault(tp1)))
-                    {
-                        if (ignoreProperties == null || ignoreProperties.All(x => x != $"{parentObject1Name}.{field1Name}"))
-                        {
-                            yield return new AssignmentIssue(parentObject1Name, $"The string value '{parentObject1Name}.{field1Name}' is not assigned.", null);
-                        }
-                    }
-                }
-                else if (s1 is bool)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (s1 is DateTime)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (s1 is int)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (s1 is decimal || s1 is double)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (s1 is Uri)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (s1 is TimeSpan)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (s1 is Enum)
-                {
-                    foreach (var diff2 in CheckValue(s1, item1Name, ignoreProperties))
-                    {
-                        yield return diff2;
-                    }
-                }
-                else if (tp1.IsValueType)
-                {
-                    foreach (var diff in CheckValueTypes(item1Name, s1, visited, ignoreProperties))
-                    {
-                        yield return diff;
-                    }
-                }
-                else
-                {
-                    foreach (var diff1 in CheckReferenceTypes(item1Name, s1, visited, ignoreProperties))
-                    {
-                        yield return diff1;
-                    }
+                    yield return diff1;
                 }
             }
         }
@@ -276,6 +259,13 @@ namespace Tharga.Test.Toolkit
                 }
                 //}
             }
+        }
+
+        private static bool IsScalar(Type type)
+        {
+            return type.IsEnum
+                   || (type.IsValueType && !type.IsGenericType && type.Namespace == SystemNamespace)
+                   || NumericScalars.Contains(type);
         }
 
         private static object GetDefault(Type type)
