@@ -14,14 +14,13 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<!-- Without this, pack emits the legacy .symbols.nupkg, whose name still ends
 		     in .nupkg, so the release push loop uploads it as a regular package and
-		     nuget.org rejects it as a duplicate. No symbols ever shipped. -->
+		     nuget.org rejects it as a duplicate. The .snupkg goes to the nuget.org symbol server. -->
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<IncludeSource>true</IncludeSource>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<DebugType>portable</DebugType>
 		<DebugSymbols>true</DebugSymbols>
-		<EnableSourceLink>false</EnableSourceLink>
 	</PropertyGroup>
 
 	<PropertyGroup>
