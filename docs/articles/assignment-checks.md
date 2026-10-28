@@ -32,7 +32,7 @@ Default values that count as "not assigned":
 
 ### Which members are checked
 
-Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not.
+Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not. Indexers and properties of a by-ref-like type, such as `Span<T>` or `ReadOnlySpan<T>`, are not read.
 
 Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop cycles:
 

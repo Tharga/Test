@@ -12,6 +12,7 @@ namespace Tharga.Test.Toolkit
         private const string SystemNamespace = "System";
         private const BindingFlags InstanceMembers = BindingFlags.Instance | BindingFlags.Public;
         private static readonly Type[] NumericScalars = { typeof(BigInteger), typeof(Complex) };
+        private static readonly PropertyInfo IsByRefLikeProperty = typeof(Type).GetProperty("IsByRefLike");
 
         public static IEnumerable<(string method, object data)> TestAssignments(this Type type, Func<Type, object> createSpecimen, string[] ignoreFunctions = null, BindingFlags bindingAttr = BindingFlags.Static | BindingFlags.Public)
         {
@@ -54,6 +55,7 @@ namespace Tharga.Test.Toolkit
         /// <remarks>
         /// <para>
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
+        /// Indexers and properties of a by-ref-like type, such as <c>Span&lt;T&gt;</c>, are not read.
         /// </para>
         /// <para>
         /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
@@ -91,6 +93,7 @@ namespace Tharga.Test.Toolkit
         /// <remarks>
         /// <para>
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
+        /// Indexers and properties of a by-ref-like type, such as <c>Span&lt;T&gt;</c>, are not read.
         /// </para>
         /// <para>
         /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
@@ -246,7 +249,7 @@ namespace Tharga.Test.Toolkit
                 }
             }
 
-            var props = tp.GetProperties(InstanceMembers);
+            var props = tp.GetProperties(InstanceMembers).Where(IsReadable);
             foreach (var prop in props)
             {
                 var v1 = prop.GetValue(s1, null);
@@ -257,6 +260,16 @@ namespace Tharga.Test.Toolkit
                     yield return diff;
                 }
             }
+        }
+
+        private static bool IsReadable(PropertyInfo prop)
+        {
+            return prop.GetIndexParameters().Length == 0 && !IsByRefLike(prop.PropertyType);
+        }
+
+        private static bool IsByRefLike(Type type)
+        {
+            return IsByRefLikeProperty != null && (bool)IsByRefLikeProperty.GetValue(type, null);
         }
 
         private static bool IsScalar(Type type)
