@@ -197,6 +197,27 @@ internal sealed class Wallet
     public Money Balance { get; init; }
 }
 
+internal sealed class Shelf
+{
+    public string Name { get; init; }
+    public string this[int index] => Name;
+}
+
+internal sealed class Batch
+{
+    public System.Collections.Immutable.ImmutableArray<int> Items { get; init; }
+}
+
+internal sealed class Window
+{
+    public ArraySegment<int> Part { get; init; }
+}
+
+internal sealed class Payload
+{
+    public ReadOnlyMemory<byte> Data { get; init; }
+}
+
 internal static class AssignedModels
 {
     public static Customer Customer() => new() { Id = 7, Name = "Ada" };
