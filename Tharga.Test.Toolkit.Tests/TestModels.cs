@@ -218,6 +218,23 @@ internal sealed class Payload
     public ReadOnlyMemory<byte> Data { get; init; }
 }
 
+internal sealed class TypeHolder
+{
+    public Type Kind { get; init; }
+}
+
+internal sealed class ReflectionHolder
+{
+    public System.Reflection.MethodInfo Method { get; init; }
+    public System.Reflection.Assembly Assembly { get; init; }
+}
+
+internal sealed class Faulty
+{
+    public string Name { get; init; }
+    public int Broken => throw new InvalidOperationException("Not available in this state.");
+}
+
 internal static class AssignedModels
 {
     public static Customer Customer() => new() { Id = 7, Name = "Ada" };
