@@ -60,9 +60,9 @@ namespace Tharga.Test.Toolkit
         /// </para>
         /// <para>
         /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
-        /// cycles: an object instance that is reached along a second path is not checked again, and a value that is equal to
-        /// one of the objects it was reached through is not walked, such as a struct or record whose member returns an equal
-        /// copy of itself.
+        /// cycles: an object or collection instance that is reached along a second path is not checked again, and a value
+        /// that is equal to one of the objects it was reached through is not walked, such as a struct or record whose member
+        /// returns an equal copy of itself.
         /// </para>
         /// <para>
         /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned. Reflection objects, such as
@@ -100,9 +100,9 @@ namespace Tharga.Test.Toolkit
         /// </para>
         /// <para>
         /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
-        /// cycles: an object instance that is reached along a second path is not checked again, and a value that is equal to
-        /// one of the objects it was reached through is not walked, such as a struct or record whose member returns an equal
-        /// copy of itself.
+        /// cycles: an object or collection instance that is reached along a second path is not checked again, and a value
+        /// that is equal to one of the objects it was reached through is not walked, such as a struct or record whose member
+        /// returns an equal copy of itself.
         /// </para>
         /// <para>
         /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned. Reflection objects, such as
@@ -183,6 +183,11 @@ namespace Tharga.Test.Toolkit
         {
             if (s1 is IEnumerable enumerable)
             {
+                if (!visited.Add(enumerable))
+                {
+                    yield break;
+                }
+
                 var enumr1 = enumerable.GetEnumerator();
                 try
                 {

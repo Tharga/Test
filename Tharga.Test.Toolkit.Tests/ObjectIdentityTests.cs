@@ -73,6 +73,39 @@ public class ObjectIdentityTests
     }
 
     [Fact]
+    public void A_collection_that_contains_itself_terminates()
+    {
+        var list = new List<object>();
+        list.Add(list);
+
+        Assert.Empty(list.AssignmentIssues());
+        Assert.True(list.IsAssigned());
+    }
+
+    [Fact]
+    public void A_cycle_of_collections_terminates()
+    {
+        var first = new List<object>();
+        var second = new List<object> { first };
+        first.Add(second);
+
+        Assert.Empty(first.AssignmentIssues());
+        Assert.True(first.IsAssigned());
+    }
+
+    [Fact]
+    public void The_elements_of_a_collection_are_still_checked()
+    {
+        var list = new List<object> { AssignedModels.Line(), new OrderLine { Quantity = 2 } };
+
+        var issue = Assert.Single(list.AssignmentIssues());
+
+        Assert.Equal(1, issue.Index);
+        Assert.Equal("The field 'List`1.OrderLine.Sku' is not assigned.", issue.Message);
+        Assert.False(list.IsAssigned());
+    }
+
+    [Fact]
     public void A_struct_member_that_returns_an_equal_copy_is_not_walked_again()
     {
         var issue = Assert.Single(new Bearing { Heading = new Angle() }.AssignmentIssues());
