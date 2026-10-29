@@ -55,7 +55,8 @@ namespace Tharga.Test.Toolkit
         /// <remarks>
         /// <para>
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
-        /// Indexers and properties of a by-ref-like type, such as <c>Span&lt;T&gt;</c>, are not read.
+        /// Indexers and properties of a by-ref-like type, such as <c>Span&lt;T&gt;</c>, are not read. A property whose getter
+        /// throws is reported as an issue that it could not be read, with the exception's message.
         /// </para>
         /// <para>
         /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
@@ -64,7 +65,8 @@ namespace Tharga.Test.Toolkit
         /// copy of itself.
         /// </para>
         /// <para>
-        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
+        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned. Reflection objects, such as
+        /// <c>Type</c>, <c>MethodInfo</c> or <c>Assembly</c>, count as assigned when they are not <c>null</c> and are not walked.
         /// </para>
         /// <para>
         /// A scalar value type is compared with its default as a whole. Scalars are enums, every non-generic struct declared
@@ -93,7 +95,8 @@ namespace Tharga.Test.Toolkit
         /// <remarks>
         /// <para>
         /// Only public instance fields and properties are walked. Static members and non-public members are not checked.
-        /// Indexers and properties of a by-ref-like type, such as <c>Span&lt;T&gt;</c>, are not read.
+        /// Indexers and properties of a by-ref-like type, such as <c>Span&lt;T&gt;</c>, are not read. A property whose getter
+        /// throws is reported as an issue that it could not be read, with the exception's message.
         /// </para>
         /// <para>
         /// Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop
@@ -102,7 +105,8 @@ namespace Tharga.Test.Toolkit
         /// copy of itself.
         /// </para>
         /// <para>
-        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned.
+        /// A string counts as not assigned only when it is <c>null</c>. An empty string is assigned. Reflection objects, such as
+        /// <c>Type</c>, <c>MethodInfo</c> or <c>Assembly</c>, count as assigned when they are not <c>null</c> and are not walked.
         /// </para>
         /// <para>
         /// A scalar value type is compared with its default as a whole. Scalars are enums, every non-generic struct declared
@@ -137,7 +141,7 @@ namespace Tharga.Test.Toolkit
                 yield break;
             }
 
-            if (s1 is string || s1 is Uri)
+            if (s1 is string || s1 is Uri || IsReflectionValue(s1))
             {
                 yield break;
             }
@@ -252,7 +256,17 @@ namespace Tharga.Test.Toolkit
             var props = tp.GetProperties(InstanceMembers).Where(IsReadable);
             foreach (var prop in props)
             {
-                var v1 = prop.GetValue(s1, null);
+                if (!TryGetValue(prop, s1, out var v1, out var error))
+                {
+                    var path = $"{item1Name}.{prop.Name}";
+                    if (ignoreProperties == null || ignoreProperties.All(x => x != path))
+                    {
+                        yield return new AssignmentIssue(item1Name, $"The property '{path}' could not be read: {error.Message}", null);
+                    }
+
+                    continue;
+                }
+
                 var diffs = DoAssignmentIssues(item1Name, prop.Name, v1, visited, memberAncestors, ignoreProperties);
 
                 foreach (var diff in diffs)
@@ -262,9 +276,34 @@ namespace Tharga.Test.Toolkit
             }
         }
 
+        private static bool TryGetValue(PropertyInfo prop, object item, out object value, out Exception error)
+        {
+            try
+            {
+                value = prop.GetValue(item, null);
+                error = null;
+                return true;
+            }
+            catch (TargetInvocationException e)
+            {
+                value = null;
+                error = e.InnerException ?? e;
+                return false;
+            }
+        }
+
         private static bool IsReadable(PropertyInfo prop)
         {
             return prop.GetIndexParameters().Length == 0 && !IsByRefLike(prop.PropertyType);
+        }
+
+        /// <summary>
+        /// Reflection objects are values: assigned when not null, and never walked. Walking a <see cref="Type"/> reaches its
+        /// assembly, every type defined there and their members, which never ends in practice.
+        /// </summary>
+        private static bool IsReflectionValue(object value)
+        {
+            return value is MemberInfo || value is Assembly || value is Module || value is ParameterInfo;
         }
 
         private static bool IsByRefLike(Type type)

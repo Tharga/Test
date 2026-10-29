@@ -25,6 +25,7 @@ Default values that count as "not assigned":
 | `enum` | the zero-valued member |
 | `Nullable<T>`, such as `long?` or `Guid?` | `null`, or the default of `T` |
 | `Uri` | `null` |
+| reflection objects: `Type`, `MethodInfo`, `PropertyInfo` and other `MemberInfo` types, `Assembly`, `Module`, `ParameterInfo` | `null`; a non-null one is not walked |
 | other reference types | `null`; a non-null one has its members checked |
 | other structs | never as a whole; each member is checked |
 
@@ -33,6 +34,13 @@ Default values that count as "not assigned":
 ### Which members are checked
 
 Only public instance fields and properties are checked. Static members and non-public members (`internal`, `protected`, `private`) are not. Indexers and properties of a by-ref-like type, such as `Span<T>` or `ReadOnlySpan<T>`, are not read.
+
+A property whose getter throws is reported as an issue, such as `The property 'Order.Total' could not be read: <message>`, so a check never passes on a member it could not read. Add the path to `ignoreProperties` if the getter is expected to throw.
+
+> **Changed in 1.17.**
+>
+> - A getter that throws is reported as an issue. Before 1.17 the exception escaped from `IsAssigned()` and `AssignmentIssues()`.
+> - Reflection objects such as `Type` count as assigned when not `null` and are not walked. Before 1.17 a `Type` member was walked member by member, which threw on getters such as `GenericParameterPosition`, and without that exception would have walked the whole runtime's types.
 
 Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop cycles:
 

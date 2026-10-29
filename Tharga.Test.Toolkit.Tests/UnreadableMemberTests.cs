@@ -3,6 +3,21 @@ namespace Tharga.Test.Toolkit.Tests;
 public class UnreadableMemberTests
 {
     [Fact]
+    public void A_getter_that_throws_is_reported()
+    {
+        var issue = Assert.Single(new Faulty { Name = "x" }.AssignmentIssues());
+
+        Assert.Equal("The property 'Faulty.Broken' could not be read: Not available in this state.", issue.Message);
+        Assert.False(new Faulty { Name = "x" }.IsAssigned());
+    }
+
+    [Fact]
+    public void An_ignored_getter_that_throws_is_not_reported()
+    {
+        Assert.True(new Faulty { Name = "x" }.IsAssigned(["Faulty.Broken"]));
+    }
+
+    [Fact]
     public void An_indexer_is_not_read()
     {
         var issue = Assert.Single(new Shelf().AssignmentIssues());
