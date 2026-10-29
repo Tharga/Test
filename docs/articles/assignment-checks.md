@@ -44,7 +44,7 @@ A property whose getter throws is reported as an issue, such as `The property 'O
 
 Each object is checked on its own, even when it is equal to another object elsewhere in the graph. Two rules stop cycles:
 
-- An object instance that is reached along a second path is not checked again.
+- An object or collection instance that is reached along a second path is not checked again.
 - A value that is equal to one of the objects it was reached through is not walked. That covers a struct or record whose member returns an equal copy of itself, such as `Angle Normalized => this` or `Money Abs => new Money(Math.Abs(Amount))`.
 
 > **Changed in 1.16.**
