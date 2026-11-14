@@ -6,7 +6,7 @@
 dotnet add package Tharga.Test.Toolkit
 ```
 
-Tharga.Test.Toolkit targets **.NET Standard 2.0**, so it works in any test project on .NET Framework 4.6.1+, .NET Core 2.0+, or modern .NET (including .NET 8 / 9 / 10).
+Tharga.Test.Toolkit targets **.NET Standard 2.0**, so it works in any test project on .NET Framework 4.6.1+, .NET Core 2.0+, or modern .NET (including .NET 8 / 9 / 10 / 11). The test suite runs on both net10.0 and net11.0.
 
 ## Namespace
 

@@ -5,6 +5,8 @@
 
 **Docs:** [test.tharga.net](https://test.tharga.net) — guides and API reference.
 
+**Supported frameworks:** the library targets .NET Standard 2.0, so it runs on .NET Framework 4.6.1+, .NET Core 2.0+ and modern .NET. Its tests run on both .NET 10 and .NET 11.
+
 ### Features
 - AssignmentExtension
 - DependencyTest
